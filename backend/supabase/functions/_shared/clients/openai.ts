@@ -1,14 +1,14 @@
 // =====================================================
-// Claude AI Client
+// OpenAI Client
 // Cliente para gerar respostas da IA (cliente oculto)
 // =====================================================
 
 import { AnalysisRequest, Message } from '../types/database.ts'
 
-const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')!
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')!
 
-if (!ANTHROPIC_API_KEY) {
-  throw new Error('Missing ANTHROPIC_API_KEY environment variable')
+if (!OPENAI_API_KEY) {
+  throw new Error('Missing OPENAI_API_KEY environment variable')
 }
 
 export interface GenerateResponseParams {
@@ -33,30 +33,34 @@ export async function generateAIResponse(params: GenerateResponseParams): Promis
   const systemPrompt = buildSystemPrompt(analysis)
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Converter formato para OpenAI (system prompt separado)
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...conversationHistory
+    ]
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
+        'Authorization': `Bearer ${OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'gpt-4o',
+        messages: messages,
         max_tokens: 1024,
-        system: systemPrompt,
-        messages: conversationHistory,
         temperature: 0.8 // Aumenta naturalidade
       })
     })
 
     if (!response.ok) {
       const error = await response.text()
-      console.error('Claude API error:', error)
-      throw new Error(`Claude API error: ${error}`)
+      console.error('OpenAI API error:', error)
+      throw new Error(`OpenAI API error: ${error}`)
     }
 
     const data = await response.json()
-    const aiMessage = data.content[0].text
+    const aiMessage = data.choices[0].message.content
 
     // Analisar se deve continuar a conversa
     const shouldContinue = analyzeShouldContinue(aiMessage, conversationHistory, analysis)
@@ -218,18 +222,17 @@ Forneça uma análise em JSON com a seguinte estrutura:
 }`
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
+        'Authorization': `Bearer ${OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'gpt-4o',
         max_tokens: 2048,
-        system: systemPrompt,
         messages: [
+          { role: 'system', content: systemPrompt },
           {
             role: 'user',
             content: `CONVERSA COMPLETA:\n\n${conversationText}\n\nGere a análise em JSON.`
@@ -239,7 +242,7 @@ Forneça uma análise em JSON com a seguinte estrutura:
     })
 
     const data = await response.json()
-    const analysisText = data.content[0].text
+    const analysisText = data.choices[0].message.content
 
     // Extrair JSON da resposta
     const jsonMatch = analysisText.match(/\{[\s\S]*\}/)

@@ -7,7 +7,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { supabase } from '../_shared/clients/supabase.ts'
 import { sendMessage, sendTyping } from '../_shared/clients/evolution.ts'
-import { generateAIResponse, generateFinalAnalysis } from '../_shared/clients/claude.ts'
+import { generateAIResponse, generateFinalAnalysis } from '../_shared/clients/openai.ts'
 import { isPast, addMinutes, toISOString } from '../_shared/utils/date.ts'
 import type { AnalysisRequest, Message } from '../_shared/types/database.ts'
 
