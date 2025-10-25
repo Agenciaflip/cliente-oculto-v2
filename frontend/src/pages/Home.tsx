@@ -143,6 +143,77 @@ export default function Home() {
           </Card>
         </div>
 
+        {/* Análises Recentes */}
+        {analyses.length > 0 && (
+          <div className="mb-16">
+            <h3 className="text-3xl font-bold text-center mb-8">Análises Recentes</h3>
+            <div className="grid gap-4">
+              {analyses.map((analysis) => (
+                <Card key={analysis.id} className="border-2 hover:shadow-lg transition-shadow">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h4 className="text-lg font-semibold">{analysis.customer_name}</h4>
+                          {analysis.status === 'pending' && (
+                            <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
+                              Pendente
+                            </span>
+                          )}
+                          {analysis.status === 'in_progress' && (
+                            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                              Em Andamento
+                            </span>
+                          )}
+                          {analysis.status === 'completed' && (
+                            <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                              Concluída
+                            </span>
+                          )}
+                          {analysis.status === 'failed' && (
+                            <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">
+                              Falhou
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-600">
+                          <div>
+                            <span className="font-medium">Telefone:</span> {analysis.customer_phone}
+                          </div>
+                          <div>
+                            <span className="font-medium">Profundidade:</span>{' '}
+                            {analysis.analysis_depth === 'quick' && 'Rápida'}
+                            {analysis.analysis_depth === 'intermediate' && 'Intermediária'}
+                            {analysis.analysis_depth === 'deep' && 'Profunda'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Criado:</span>{' '}
+                            {new Date(analysis.created_at).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        </div>
+                        {analysis.metadata?.business_name && (
+                          <div className="mt-2 text-sm text-gray-600">
+                            <span className="font-medium">Negócio:</span> {analysis.metadata.business_name}
+                          </div>
+                        )}
+                      </div>
+                      <Button variant="outline" size="sm" className="ml-4">
+                        Ver Detalhes
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Features */}
         <div className="mb-16">
           <h3 className="text-3xl font-bold text-center mb-8">Como Funciona</h3>
