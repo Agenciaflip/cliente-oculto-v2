@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MessageSquare, Users, BarChart3, CheckCircle2, Clock, Zap } from "lucide-react"
@@ -6,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client"
 import type { AnalysisRequest } from "@/integrations/supabase/types"
 
 export default function Home() {
+  const navigate = useNavigate()
   const [analyses, setAnalyses] = useState<AnalysisRequest[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -65,8 +67,8 @@ export default function Home() {
             <h1 className="text-2xl font-bold text-gray-900">Cliente Oculto</h1>
           </div>
           <nav className="flex gap-4">
-            <Button variant="ghost">Análises</Button>
-            <Button variant="default">Nova Análise</Button>
+            <Button variant="ghost" onClick={() => navigate('/')}>Análises</Button>
+            <Button variant="default" onClick={() => navigate('/new')}>Nova Análise</Button>
           </nav>
         </div>
       </header>
@@ -81,10 +83,10 @@ export default function Home() {
             IA avalia conversas de vendedores em tempo real. Insights profundos, métricas precisas, melhoria contínua.
           </p>
           <div className="flex gap-4 justify-center">
-            <Button size="lg" className="h-12 px-8 text-base">
+            <Button size="lg" className="h-12 px-8 text-base" onClick={() => navigate('/new')}>
               Começar Agora
             </Button>
-            <Button size="lg" variant="outline" className="h-12 px-8 text-base">
+            <Button size="lg" variant="outline" className="h-12 px-8 text-base" onClick={() => navigate('/')}>
               Ver Demo
             </Button>
           </div>
@@ -190,7 +192,7 @@ export default function Home() {
             <p className="text-lg mb-6 text-blue-50">
               Crie sua primeira análise em menos de 2 minutos
             </p>
-            <Button size="lg" variant="secondary" className="h-12 px-8 text-base">
+            <Button size="lg" variant="secondary" className="h-12 px-8 text-base" onClick={() => navigate('/new')}>
               Criar Primeira Análise
             </Button>
           </CardContent>
