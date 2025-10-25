@@ -19,18 +19,23 @@ const analysisSchema = z.object({
 
   customer_phone: z.string()
     .regex(/^55\d{10,11}$/, "Formato: 55 + DDD + número (ex: 5511999999999)")
-    .length(13, "Deve ter 13 dígitos (55 + DDD + número)"),
+    .min(12, "Telefone incompleto")
+    .max(13, "Telefone inválido"),
 
-  objectives: z.string()
-    .min(10, "Descreva os objetivos com mais detalhes")
-    .max(1000, "Objetivos muito longos"),
+  business_name: z.string()
+    .min(2, "Nome do negócio muito curto")
+    .max(100, "Nome do negócio muito longo"),
+
+  evaluation_criteria: z.string()
+    .min(20, "Descreva os critérios com mais detalhes")
+    .max(2000, "Critérios muito longos"),
 
   analysis_depth: z.enum(["quick", "intermediate", "deep"], {
     required_error: "Selecione a profundidade da análise"
   }),
 
   evolution_instance: z.enum(["clienteoculto-homem", "clienteoculto-mulher"], {
-    required_error: "Selecione o perfil do cliente oculto"
+    required_error: "Selecione o perfil do cliente"
   })
 })
 
@@ -58,11 +63,11 @@ export default function NewAnalysis() {
     setIsSubmitting(true)
 
     try {
-      // Converter objetivos de string para array
-      const objectivesArray = data.objectives
+      // Converter critérios de avaliação de string para array
+      const criteriaArray = data.evaluation_criteria
         .split('\n')
-        .map(obj => obj.trim())
-        .filter(obj => obj.length > 0)
+        .map(crit => crit.trim())
+        .filter(crit => crit.length > 0)
 
       // Criar análise no Supabase
       const { data: analysis, error } = await supabase
@@ -70,13 +75,14 @@ export default function NewAnalysis() {
         .insert({
           customer_name: data.customer_name,
           customer_phone: data.customer_phone,
-          objectives: objectivesArray,
+          objectives: criteriaArray,
           analysis_depth: data.analysis_depth,
           evolution_instance: data.evolution_instance,
           status: 'pending',
           metadata: {
             created_from: 'web',
-            conversation_style: 'balanced'
+            conversation_style: 'balanced',
+            business_name: data.business_name
           }
         })
         .select()
@@ -139,21 +145,22 @@ export default function NewAnalysis() {
       <section className="container mx-auto px-4 py-8 max-w-2xl">
         <Card className="border-2">
           <CardHeader>
-            <CardTitle className="text-3xl">Nova Análise</CardTitle>
+            <CardTitle className="text-3xl">Nova Avaliação de Cliente Oculto</CardTitle>
             <CardDescription>
-              Configure uma nova análise de cliente oculto via WhatsApp
+              A IA se passará por um cliente real interessado e avaliará o atendimento do vendedor via WhatsApp.
+              Configure os critérios que serão observados durante a conversa.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              {/* Nome do Cliente Oculto */}
+              {/* Perfil do Cliente (Persona) */}
               <div className="space-y-2">
                 <Label htmlFor="customer_name">
-                  Nome do Cliente Oculto
+                  Perfil do Cliente (Persona)
                 </Label>
                 <Input
                   id="customer_name"
-                  placeholder="Ex: João Silva"
+                  placeholder="Ex: Maria Silva"
                   {...register("customer_name")}
                   className={errors.customer_name ? "border-red-500" : ""}
                 />
@@ -161,7 +168,26 @@ export default function NewAnalysis() {
                   <p className="text-sm text-red-600">{errors.customer_name.message}</p>
                 )}
                 <p className="text-xs text-gray-500">
-                  Nome que aparecerá no WhatsApp para o vendedor
+                  Nome da persona que a IA usará para se passar por cliente real
+                </p>
+              </div>
+
+              {/* Nome do Negócio */}
+              <div className="space-y-2">
+                <Label htmlFor="business_name">
+                  Nome do Negócio/Produto Avaliado
+                </Label>
+                <Input
+                  id="business_name"
+                  placeholder="Ex: Loja XYZ, Produto ABC"
+                  {...register("business_name")}
+                  className={errors.business_name ? "border-red-500" : ""}
+                />
+                {errors.business_name && (
+                  <p className="text-sm text-red-600">{errors.business_name.message}</p>
+                )}
+                <p className="text-xs text-gray-500">
+                  Qual negócio, loja ou produto está sendo avaliado
                 </p>
               </div>
 
@@ -180,27 +206,27 @@ export default function NewAnalysis() {
                   <p className="text-sm text-red-600">{errors.customer_phone.message}</p>
                 )}
                 <p className="text-xs text-gray-500">
-                  Formato: 55 + DDD + número (sem espaços ou caracteres especiais)
+                  Telefone do vendedor que será avaliado (formato: 55 + DDD + número)
                 </p>
               </div>
 
-              {/* Objetivos */}
+              {/* Critérios de Avaliação */}
               <div className="space-y-2">
-                <Label htmlFor="objectives">
-                  Objetivos da Conversa
+                <Label htmlFor="evaluation_criteria">
+                  Critérios de Avaliação
                 </Label>
                 <Textarea
-                  id="objectives"
-                  placeholder="Ex:&#10;Descobrir preço do produto X&#10;Entender forma de pagamento&#10;Avaliar tempo de resposta"
-                  rows={5}
-                  {...register("objectives")}
-                  className={errors.objectives ? "border-red-500" : ""}
+                  id="evaluation_criteria"
+                  placeholder="Ex:&#10;Tempo de resposta (máx 5min)&#10;Cordialidade e simpatia no atendimento&#10;Conhecimento sobre o produto/serviço&#10;Proatividade em oferecer soluções&#10;Técnicas de vendas utilizadas&#10;Resolução de objeções&#10;Tentativa de fechamento"
+                  rows={8}
+                  {...register("evaluation_criteria")}
+                  className={errors.evaluation_criteria ? "border-red-500" : ""}
                 />
-                {errors.objectives && (
-                  <p className="text-sm text-red-600">{errors.objectives.message}</p>
+                {errors.evaluation_criteria && (
+                  <p className="text-sm text-red-600">{errors.evaluation_criteria.message}</p>
                 )}
                 <p className="text-xs text-gray-500">
-                  Um objetivo por linha. A IA tentará alcançar todos os objetivos na conversa.
+                  Um critério por linha. A IA avaliará cada aspecto durante a conversa.
                 </p>
               </div>
 
@@ -226,19 +252,22 @@ export default function NewAnalysis() {
               {/* Perfil */}
               <div className="space-y-2">
                 <Label htmlFor="evolution_instance">
-                  Perfil do Cliente Oculto
+                  Gênero da Persona
                 </Label>
                 <select
                   id="evolution_instance"
                   {...register("evolution_instance")}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
-                  <option value="clienteoculto-mulher">👩 Cliente Oculto Mulher</option>
-                  <option value="clienteoculto-homem">👨 Cliente Oculto Homem</option>
+                  <option value="clienteoculto-mulher">👩 Mulher (Perfil Feminino)</option>
+                  <option value="clienteoculto-homem">👨 Homem (Perfil Masculino)</option>
                 </select>
                 {errors.evolution_instance && (
                   <p className="text-sm text-red-600">{errors.evolution_instance.message}</p>
                 )}
+                <p className="text-xs text-gray-500">
+                  Gênero da persona que entrará em contato com o vendedor
+                </p>
               </div>
 
               {/* Submit */}
