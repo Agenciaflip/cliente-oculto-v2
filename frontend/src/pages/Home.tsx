@@ -1,8 +1,60 @@
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MessageSquare, Users, BarChart3, CheckCircle2, Clock, Zap } from "lucide-react"
+import { supabase } from "@/integrations/supabase/client"
+import type { AnalysisRequest } from "@/integrations/supabase/types"
 
 export default function Home() {
+  const [analyses, setAnalyses] = useState<AnalysisRequest[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Buscar análises do banco
+  useEffect(() => {
+    loadAnalyses()
+
+    // Escutar atualizações em tempo real
+    const channel = supabase
+      .channel('analyses-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'analysis_requests'
+        },
+        () => {
+          loadAnalyses() // Recarrega quando houver mudança
+        }
+      )
+      .subscribe()
+
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [])
+
+  async function loadAnalyses() {
+    try {
+      const { data, error } = await supabase
+        .from('analysis_requests')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setAnalyses(data || [])
+    } catch (error) {
+      console.error('Erro ao carregar análises:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Calcular estatísticas
+  const totalAnalyses = analyses.length
+  const completedAnalyses = analyses.filter(a => a.status === 'completed').length
+  const inProgressAnalyses = analyses.filter(a => a.status === 'in_progress').length
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
@@ -48,7 +100,9 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Total de Análises</p>
-                  <p className="text-3xl font-bold">0</p>
+                  <p className="text-3xl font-bold">
+                    {loading ? '...' : totalAnalyses}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -62,7 +116,9 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Concluídas</p>
-                  <p className="text-3xl font-bold">0</p>
+                  <p className="text-3xl font-bold">
+                    {loading ? '...' : completedAnalyses}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -76,7 +132,9 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Em Andamento</p>
-                  <p className="text-3xl font-bold">0</p>
+                  <p className="text-3xl font-bold">
+                    {loading ? '...' : inProgressAnalyses}
+                  </p>
                 </div>
               </div>
             </CardContent>
